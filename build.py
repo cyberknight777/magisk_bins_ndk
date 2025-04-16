@@ -133,11 +133,8 @@ release = True
 
 # Common constants
 support_abis = {
-    "armeabi-v7a": "thumbv7neon-linux-androideabi",
-    "x86": "i686-linux-android",
     "arm64-v8a": "aarch64-linux-android",
     "x86_64": "x86_64-linux-android",
-    "riscv64": "riscv64-linux-android",
 }
 
 # Environment checks and detection
@@ -145,10 +142,10 @@ is_windows = os.name == "nt"
 EXE_EXT = ".exe" if is_windows else ""
 
 # Global vars
-default_targets = {"magisk", "magiskinit", "magiskboot", "magiskpolicy"}
-support_targets = default_targets | {"resetprop"}
-rust_targets = {"magisk", "magiskinit", "magiskboot", "magiskpolicy"}
-archs = {"armeabi-v7a", "x86", "arm64-v8a", "x86_64"}
+default_targets = {"magiskboot"}
+support_targets = default_targets
+rust_targets = {"magiskboot"}
+archs = {"arm64-v8a", "x86_64"}
 config = load_config()
 triples = map(support_abis.get, archs)
 build_abis = dict(zip(archs, triples))
