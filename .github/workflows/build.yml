@@ -37,6 +37,6 @@ jobs:
         with:
           artifacts: "native/out/arm64-v8a/magiskboot,native/out/arm64-v8a/magiskpolicy"
           name: "magisk_bins-${{ env.MAGISK_VERSION }}"
-          tag: "magisk_bins-${{ env.MAGISK_VERSION }}-${{ github.sha }}"
+          tag: "magisk_bins-${{ env.MAGISK_VERSION }}"
           bodyFile: "native/out/magisk_version.txt"
           token: ${{ secrets.GITHUB_TOKEN }}
