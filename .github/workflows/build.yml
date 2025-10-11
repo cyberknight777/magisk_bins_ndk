@@ -32,14 +32,10 @@ jobs:
           echo "MAGISK_VERSION=$(cat magisk_config.prop | grep "magisk.versionCode=" | cut -d '=' -f 2)" >> "$GITHUB_ENV"
           echo "MAGISK_VERSION=$MAGISK_VERSION"
 
-      - name: Compress out
-        run: |
-          7za a magisk_bins.7z native/out/*
-
       - name: Upload output to GH-Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "magisk_bins.7z"
+          artifacts: "native/out/arm64-v8a/magiskboot,native/out/arm64-v8a/magiskpolicy"
           name: "magisk_bins-${{ env.MAGISK_VERSION }}"
           tag: "magisk_bins-${{ env.MAGISK_VERSION }}-${{ github.sha }}"
           bodyFile: "native/out/magisk_version.txt"
