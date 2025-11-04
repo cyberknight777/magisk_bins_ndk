@@ -31,12 +31,14 @@ jobs:
           ls -al native/out/**
           echo "MAGISK_VERSION=$(cat magisk_config.prop | grep "magisk.versionCode=" | cut -d '=' -f 2)" >> "$GITHUB_ENV"
           echo "MAGISK_VERSION=$MAGISK_VERSION"
+          echo "DATE=$(date -u '+%d%m%Y%I%M')" >> $GITHUB_ENV
+          echo "DATE=$DATE"
 
       - name: Upload output to GH-Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "native/out/arm64-v8a/magiskboot,native/out/arm64-v8a/magiskpolicy"
-          name: "magisk_bins-${{ env.MAGISK_VERSION }}"
-          tag: "magisk_bins-${{ env.MAGISK_VERSION }}"
+          name: "magisk_bins-${{ env.MAGISK_VERSION }}-${{ env.DATE }}"
+          tag: "magisk_bins-${{ env.MAGISK_VERSION }}-${{ env.DATE }}"
           bodyFile: "native/out/magisk_version.txt"
           token: ${{ secrets.GITHUB_TOKEN }}
