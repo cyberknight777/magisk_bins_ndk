@@ -23,7 +23,7 @@ jobs:
           ls -al native/out/**
           echo "MAGISK_VERSION=$(cat magisk_config.prop | grep "magisk.versionCode=" | cut -d '=' -f 2)" >> "$GITHUB_ENV"
           echo "MAGISK_VERSION=$MAGISK_VERSION"
-          echo "DATE=$(date -u '+%d%m%Y%I%M')" >> $GITHUB_ENV
+          echo "DATE=$(date -u '+%Y%d%m%I%M')" >> $GITHUB_ENV
           echo "DATE=$DATE"
 
       - name: Upload output to GH-Release
