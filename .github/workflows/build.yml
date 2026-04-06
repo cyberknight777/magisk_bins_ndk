@@ -1,9 +1,16 @@
-# This is a basic workflow that is manually triggered
-
 name: build
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -11,22 +18,88 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Sync from upstream
+        id: sync
+        run: |
+          set -euo pipefail
+
+          git config user.name "PeroSar"
+          git config user.email "perosar1111@gmail.com"
+
+          git remote add upstream https://github.com/xiaoxindada/magisk_bins_ndk.git 2>/dev/null || \
+            git remote set-url upstream https://github.com/xiaoxindada/magisk_bins_ndk.git
+          git fetch origin main
+          git fetch upstream main
+          git checkout -B main origin/main
+
+          if git merge-base --is-ancestor upstream/main main; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git rebase upstream/main; then
+            git rebase --abort || true
+            exit 1
+          fi
+
+          git push --force-with-lease origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup Python3
+        if: github.event_name == 'workflow_dispatch' || steps.sync.outputs.changed == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.8.x"
 
-      - name:  Setup ndk and strart build
+      - name: Setup ndk and start build
+        if: github.event_name == 'workflow_dispatch' || steps.sync.outputs.changed == 'true'
         run: |
           python3 build.py --setup_ndk --build_binary
           ls -al native/out/**
-          echo "MAGISK_VERSION=$(cat magisk_config.prop | grep "magisk.versionCode=" | cut -d '=' -f 2)" >> "$GITHUB_ENV"
-          echo "MAGISK_VERSION=$MAGISK_VERSION"
-          echo "DATE=$(date -u '+%Y%m%d%I%M')" >> $GITHUB_ENV
-          echo "DATE=$DATE"
+          echo "MAGISK_VERSION=$(grep '^magisk.versionCode=' magisk_config.prop | cut -d '=' -f 2)" >> "$GITHUB_ENV"
+          echo "DATE=$(date -u '+%Y%m%d%H%M')" >> "$GITHUB_ENV"
+
+      - name: Update ksupatcher magiskboot
+        if: github.event_name == 'workflow_dispatch' || steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          SRC_FILE="$GITHUB_WORKSPACE/native/out/arm64-v8a/magiskboot"
+          rm -rf "$GITHUB_WORKSPACE/ksupatcher"
+
+          git config --global user.name "Cyber Knight"
+          git config --global user.email "cyberknight755@gmail.com"
+
+          git clone "https://cyberknight777:${GH_TOKEN}@github.com/akuatech/ksupatcher.git" "$GITHUB_WORKSPACE/ksupatcher"
+          cd "$GITHUB_WORKSPACE/ksupatcher"
+
+          TARGET_BRANCH="$(git branch --show-current)"
+          TARGET_FILE="app/src/main/jniLibs/arm64-v8a/libmagiskboot.so"
+
+          if [ -f "$TARGET_FILE" ] && cmp -s "$SRC_FILE" "$TARGET_FILE"; then
+            echo "ksupatcher already has the latest magiskboot."
+            exit 0
+          fi
+
+          install -D -m 0644 "$SRC_FILE" "$TARGET_FILE"
+          git add "$TARGET_FILE"
+
+          if git diff --cached --quiet; then
+            echo "No ksupatcher changes to commit."
+            exit 0
+          fi
+
+          git commit -m "ksupatcher: Update Magisk assets"
+          git push origin "HEAD:$TARGET_BRANCH"
 
       - name: Upload output to GH-Release
+        if: github.event_name == 'workflow_dispatch' || steps.sync.outputs.changed == 'true'
         uses: ncipollo/release-action@v1
         with:
           artifacts: "native/out/arm64-v8a/magiskboot,native/out/arm64-v8a/magiskpolicy"
