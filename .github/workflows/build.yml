@@ -27,8 +27,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          git config user.name "PeroSar"
-          git config user.email "perosar1111@gmail.com"
+          git config --global user.name "Cyber Knight"
+          git config --global user.email "cyberknight755@gmail.com"
 
           git remote add upstream https://github.com/xiaoxindada/magisk_bins_ndk.git 2>/dev/null || \
             git remote set-url upstream https://github.com/xiaoxindada/magisk_bins_ndk.git
