@@ -176,6 +176,9 @@ llvm_bin = ndk_root / "toolchains" / "llvm" / "prebuilt" / f"{os_name}-x86_64" /
 native_gen_path = native_out / "generated"
 rust_out = native_out / "rust"
 cargo = ndk_root / "toolchains" / "rust" / "bin" / f"cargo{EXE_EXT}"
+repo_patches = [
+    Path("patches", "7db3bb8-bootimg-no-kernel-repack.patch"),
+]
 
 
 def write_if_diff(file_name, text):
@@ -392,6 +395,30 @@ def run_cargo(cmds):
     return execv([cargo, *cmds], env)
 
 
+def apply_repo_patch(patch: Path):
+    patch = Path(LOCALDIR, patch).resolve()
+    patch_name = patch.relative_to(LOCALDIR)
+
+    if execv(["patch", "--batch", "--forward", "--silent", "-p1", "--dry-run", "-i", str(patch)]).returncode == 0:
+        if execv(["patch", "--batch", "--forward", "--silent", "-p1", "-i", str(patch)]).returncode != 0:
+            error(f"Failed to apply patch: {patch_name}")
+        print(f"* Applied patch: {patch_name}")
+        return
+
+    if execv(["patch", "--batch", "--forward", "--silent", "-R", "-p1", "--dry-run", "-i", str(patch)]).returncode == 0:
+        print(f"* Patch already applied: {patch_name}")
+        return
+
+    error(f"Failed to apply patch: {patch_name}")
+
+
+def apply_repo_patches():
+    for patch in repo_patches:
+        if not Path(LOCALDIR, patch).exists():
+            error(f"Missing repo patch: {patch}")
+        apply_repo_patch(patch)
+
+
 def update_code():
     os.chdir(LOCALDIR)
     rm_rf("Magisk")
@@ -419,6 +446,7 @@ def update_code():
 
     mv(Path("Magisk", "native"), "native")
     mv(Path("Magisk", "tools"), "tools")
+    apply_repo_patches()
     rm_rf("Magisk")
 
 
