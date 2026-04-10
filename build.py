@@ -6,6 +6,7 @@ import multiprocessing
 import os
 from pathlib import Path
 import platform
+import re
 import sys
 import os.path as op
 import shutil
@@ -41,6 +42,22 @@ def load_config():
         if key.startswith("magisk."):
             config[key[7:]] = value
     return config
+
+
+def read_magisk_ondk_version(magisk_dir: Path):
+    pattern = re.compile(r'^\s*ondk_version\s*=\s*"([^"]+)"')
+    candidates = [Path(magisk_dir, "scripts", "env.py"), Path(magisk_dir, "build.py")]
+
+    for file in candidates:
+        if not file.exists():
+            continue
+        with open(file, "r", encoding="utf-8") as f:
+            for line in f:
+                match = pattern.match(line)
+                if match:
+                    return match.group(1)
+
+    error("Cannot determine ondk_version from Magisk sources")
 
 
 def error(str):
@@ -392,20 +409,13 @@ def update_code():
     magisk_version = cmd_out(
         f"cd Magisk && git rev-parse --short=8 HEAD && cd .."
     ).strip(" \t\r\n")
-    ondk_version = None
+    ondk_version = read_magisk_ondk_version(Path("Magisk"))
     with open(Path("Magisk", "app", "gradle.properties"), "r") as i:
-        with open(Path("Magisk", "build.py"), "r") as b:
-            with open(Path("magisk_config.prop"), "w", encoding="utf-8") as o:
-                for line in i.readlines()[-3:]:
-                    o.write(line)
-                o.write(f"magisk.version={magisk_version}\n")
-                for line in b.readlines():
-                    if "ondk_version" in line:
-                        ondk_version = (
-                            line.split("=")[1].replace(" ", "").replace('"', "")
-                        )
-                        break
-                o.write(f"magisk.ondkVersion={ondk_version}\n")
+        with open(Path("magisk_config.prop"), "w", encoding="utf-8") as o:
+            for line in i.readlines()[-3:]:
+                o.write(line)
+            o.write(f"magisk.version={magisk_version}\n")
+            o.write(f"magisk.ondkVersion={ondk_version}\n")
 
     mv(Path("Magisk", "native"), "native")
     mv(Path("Magisk", "tools"), "tools")

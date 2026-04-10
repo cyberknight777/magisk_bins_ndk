@@ -2,5 +2,4 @@
 magisk.stubVersion=40
 magisk.versionCode=30700
 magisk.version=48909358
-magisk.ondkVersion=fhttps://github.com/topjohnwu/ondk/releases/download/{ondk_version}/ondk-{ondk_version}-{os_name}.tar.xz
-
+magisk.ondkVersion=r29.5
