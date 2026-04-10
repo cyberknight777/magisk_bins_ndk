@@ -1,0 +1,58 @@
+name: update_upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update_upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Python3
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8.x"
+
+      - name: Update source
+        run: |
+          python3 build.py --update_code
+
+      - name: Commit and push changes
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "GH_TOKEN secret is required to push upstream updates."
+            exit 1
+          fi
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No upstream changes."
+            exit 0
+          fi
+
+          UPDATE_UTC_TIME=$(date -u '+%Y-%m-%d-%H:%M')
+
+          git config --global user.name "Cyber Knight"
+          git config --global user.email "cyberknight755@gmail.com"
+          git add build.py magisk_config.prop native tools
+          git commit -m "Update code date: Etc/UTC: $UPDATE_UTC_TIME"
+
+          git remote set-url origin "https://cyberknight777:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin HEAD:main
