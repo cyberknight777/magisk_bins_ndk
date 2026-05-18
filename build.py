@@ -150,7 +150,6 @@ release = True
 # Common constants
 support_abis = {
     "arm64-v8a": "aarch64-linux-android",
-    "x86_64": "x86_64-linux-android",
 }
 
 # Environment checks and detection
@@ -161,7 +160,7 @@ EXE_EXT = ".exe" if is_windows else ""
 default_targets = {"magiskboot", "magiskpolicy"}
 support_targets = default_targets
 rust_targets = {"magiskboot", "magiskpolicy"}
-archs = {"arm64-v8a", "x86_64"}
+archs = {"arm64-v8a"}
 config = load_config()
 triples = map(support_abis.get, archs)
 build_abis = dict(zip(archs, triples))
