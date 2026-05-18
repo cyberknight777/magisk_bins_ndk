@@ -75,6 +75,43 @@ jobs:
           git commit -m "ksupatcher: Update Magisk assets" -m "$COMMIT_BODY"
           git push origin "HEAD:$TARGET_BRANCH"
 
+      - name: Update anykernel3 magiskboot and magiskpolicy
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN3 }}
+        run: |
+          set -euo pipefail
+
+          SRC_FILE1="$GITHUB_WORKSPACE/native/out/arm64-v8a/magiskboot"
+          SRC_FILE2="$GITHUB_WORKSPACE/native/out/arm64-v8a/magiskpolicy"
+          rm -rf "$GITHUB_WORKSPACE/anykernel3"
+
+          git clone "https://cyberknight777:${GH_TOKEN}@github.com/cyberknight777/anykernel3.git" -b cancunf "$GITHUB_WORKSPACE/anykernel3"
+          cd "$GITHUB_WORKSPACE/anykernel3"
+
+          TARGET_BRANCH="cancunf"
+          TARGET_FILE1="tools/magiskboot"
+          TARGET_FILE2="tools/magiskpolicy"
+
+          if \
+            { [ -f "$TARGET_FILE1" ] && cmp -s "$SRC_FILE1" "$TARGET_FILE1"; } && \
+            { [ -f "$TARGET_FILE2" ] && cmp -s "$SRC_FILE2" "$TARGET_FILE2"; } ; then
+            echo "anykernel3 already has the latest magiskboot and magiskpolicy."
+            exit 0
+          fi
+
+          install -D -m 0755 "$SRC_FILE1" "$TARGET_FILE1"
+          install -D -m 0755 "$SRC_FILE2" "$TARGET_FILE2"
+          git add "$TARGET_FILE1" "$TARGET_FILE2"
+
+          if git diff --cached --quiet; then
+            echo "No anykernel3 changes to commit."
+            exit 0
+          fi
+
+          COMMIT_BODY="$(grep -E '^magisk\.(stubVersion|versionCode|version|ondkVersion)=' "$GITHUB_WORKSPACE/magisk_config.prop")"
+          git commit -m "anykernel3: Update Magisk assets" -m "$COMMIT_BODY"
+          git push origin "HEAD:$TARGET_BRANCH"
+
       - name: Upload output to GH-Release
         uses: ncipollo/release-action@v1
         with:
