@@ -40,41 +40,6 @@ jobs:
           echo "MAGISK_VERSION=$(grep '^magisk.versionCode=' magisk_config.prop | cut -d '=' -f 2)" >> "$GITHUB_ENV"
           echo "DATE=$(date -u '+%Y%m%d%H%M')" >> "$GITHUB_ENV"
 
-      - name: Update ksupatcher magiskboot
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          SRC_FILE="$GITHUB_WORKSPACE/native/out/arm64-v8a/magiskboot"
-          rm -rf "$GITHUB_WORKSPACE/ksupatcher"
-
-          git config --global user.name "Cyber Knight"
-          git config --global user.email "cyberknight755@gmail.com"
-
-          git clone "https://cyberknight777:${GH_TOKEN}@github.com/akuatech/ksupatcher.git" "$GITHUB_WORKSPACE/ksupatcher"
-          cd "$GITHUB_WORKSPACE/ksupatcher"
-
-          TARGET_BRANCH="$(git branch --show-current)"
-          TARGET_FILE="app/src/main/jniLibs/arm64-v8a/libmagiskboot.so"
-
-          if [ -f "$TARGET_FILE" ] && cmp -s "$SRC_FILE" "$TARGET_FILE"; then
-            echo "ksupatcher already has the latest magiskboot."
-            exit 0
-          fi
-
-          install -D -m 0644 "$SRC_FILE" "$TARGET_FILE"
-          git add "$TARGET_FILE"
-
-          if git diff --cached --quiet; then
-            echo "No ksupatcher changes to commit."
-            exit 0
-          fi
-
-          COMMIT_BODY="$(grep -E '^magisk\.(stubVersion|versionCode|version|ondkVersion)=' "$GITHUB_WORKSPACE/magisk_config.prop")"
-          git commit -m "ksupatcher: Update Magisk assets" -m "$COMMIT_BODY"
-          git push origin "HEAD:$TARGET_BRANCH"
-
       - name: Update anykernel3 magiskboot and magiskpolicy
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN3 }}
