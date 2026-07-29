@@ -50,6 +50,9 @@ jobs:
           SRC_FILE2="$GITHUB_WORKSPACE/native/out/arm64-v8a/magiskpolicy"
           rm -rf "$GITHUB_WORKSPACE/anykernel3"
 
+          git config --global user.name "Cyber Knight"
+          git config --global user.email "cyberknight755@gmail.com"
+
           git clone "https://cyberknight777:${GH_TOKEN}@github.com/cyberknight777/anykernel3.git" -b cancunf "$GITHUB_WORKSPACE/anykernel3"
           cd "$GITHUB_WORKSPACE/anykernel3"
 
