@@ -76,6 +76,8 @@ jobs:
             exit 0
           fi
 
+          sed -i "s/^# AK_BASE_VERSION=.*/# AK_BASE_VERSION=$(date -u '+%Y%m%d')/" META-INF/com/google/android/updater-script
+
           COMMIT_BODY="$(grep -E '^magisk\.(stubVersion|versionCode|version|ondkVersion)=' "$GITHUB_WORKSPACE/magisk_config.prop")"
           git commit -m "anykernel3: Update Magisk assets" -m "$COMMIT_BODY"
           git push origin "HEAD:$TARGET_BRANCH"
